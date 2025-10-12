@@ -46,6 +46,20 @@ spec:
           initialDelaySeconds: 180
           periodSeconds: 30
           timeoutSeconds: 10
+        volumeMounts:
+        - name: ollama-claim
+          mountPath: /root/.ollama
+        - mountPath: /dev/kfd
+          name: kfd
+        - mountPath: /dev/dri
+          name: dri
+      volumes:
+      - name: kfd
+        hostPath:
+          path: /dev/kfd
+      - name: dri
+        hostPath:
+          path: /dev/dri
 ---
 apiVersion: v1
 kind: Service
