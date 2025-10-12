@@ -1,0 +1,11 @@
+githubConfigUrl: "https://github.com/dvystrcil" #/stable-diffution-webui-rcom/" 
+githubApp:
+  enabled: true
+  appId: "2106271" 
+  installationId: "89788955"
+  privateKeySecret:
+    name: arc-secret
+    key: github_app_private_key
+runnerScaleSetName: "stable-diffution-webui-rcom-runner"
+minRunners: 0
+maxRunners: 3
