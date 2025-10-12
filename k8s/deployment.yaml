@@ -47,8 +47,8 @@ spec:
           periodSeconds: 30
           timeoutSeconds: 10
         volumeMounts:
-        - name: ollama-claim
-          mountPath: /root/.ollama
+        # - name: ollama-claim
+        #   mountPath: /root/.ollama
         - mountPath: /dev/kfd
           name: kfd
         - mountPath: /dev/dri
