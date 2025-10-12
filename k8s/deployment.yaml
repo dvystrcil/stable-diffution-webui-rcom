@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: stable-diffusion-webui
-        image: ghcr.io/dvystrcil/stable-diffution-rcom:latest # Update with your actual registry and image
+        image: ghcr.io/dvystrcil/stable-diffution-webui-rcom:main
         ports:
         - containerPort: 7860
         env:
