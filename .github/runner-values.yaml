@@ -1,4 +1,7 @@
 githubConfigUrl: "https://github.com/dvystrcil" #/stable-diffution-webui-rcom/" 
+controllerServiceAccount:
+  namespace: arc-systems
+  name: arc-systems-gha-rs-controller 
 githubApp:
   enabled: true
   appId: "2106271" 
