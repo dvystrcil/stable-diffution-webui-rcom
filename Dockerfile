@@ -5,7 +5,9 @@ ARG STABLE_DIFFUSION_TAG=v1.10.1
 FROM alpine/git:latest AS source
 ARG STABLE_DIFFUSION_TAG
 WORKDIR /app
-RUN git clone --depth 1 --branch ${STABLE_DIFFUSION_TAG} https://github.com/AUTOMATIC1111/stable-diffusion-webui.git .
+# Clone specific tag from repository (--branch works for tags too)
+RUN git clone --depth 1 --branch ${STABLE_DIFFUSION_TAG} https://github.com/AUTOMATIC1111/stable-diffusion-webui.git . && \
+    git describe --tags
 
 # Stage 2: Final application stage
 FROM rocm/pytorch:rocm7.0.2_ubuntu24.04_py3.12_pytorch_release_2.8.0
