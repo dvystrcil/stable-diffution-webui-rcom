@@ -1,0 +1,8 @@
+# Docker ignore file
+.git
+.github
+*.md
+.gitignore
+.dockerignore
+k8s/
+docs/

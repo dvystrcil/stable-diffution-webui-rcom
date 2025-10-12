@@ -1,0 +1,26 @@
+services:
+  stable-diffusion-webui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        STABLE_DIFFUSION_TAG: v1.10.1
+    ports:
+      - "7860:7860"
+    environment:
+      - COMMANDLINE_ARGS=--listen --port 7860
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Optional: Mount volumes for persistence
+      - ./models:/app/models
+      - ./outputs:/app/outputs
+      - ./config:/app/config
+    restart: unless-stopped
+    # Uncomment if you have GPU support
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
