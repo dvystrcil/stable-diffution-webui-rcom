@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: stable-diffusion-webui
+  name: sd-webui-rcom
   labels:
-    app: stable-diffusion-webui
+    app: sd-webui-rcom
   annotations:
     reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: stable-diffusion-webui
+      app: sd-webui-rcom
   template:
     metadata:
       labels:
-        app: stable-diffusion-webui
+        app: sd-webui-rcom
     spec:
       containers:
-      - name: stable-diffusion-webui
+      - name: sd-webui-rcom
         image: ghcr.io/dvystrcil/stable-diffution-webui-rcom:main
         ports:
         - containerPort: 7860
@@ -64,10 +64,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: stable-diffusion-webui
+  name: sd-webui-rcom
 spec:
   selector:
-    app: stable-diffusion-webui
+    app: sd-webui-rcom
   ports:
   - protocol: TCP
     port: 80
