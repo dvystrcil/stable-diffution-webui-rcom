@@ -29,14 +29,14 @@ spec:
         env:
         - name: COMMANDLINE_ARGS
           value: "--listen --port 7860"
-        resources:
-          # requests:
-          #   memory: "4Gi"
-          #   cpu: "1000m"            
-          limits:
-            # memory: "8Gi"
-            # cpu: "2000m"
-            amd.com/gpu: 1
+        # resources:
+        #   # requests:
+        #   #   memory: "4Gi"
+        #   #   cpu: "1000m"            
+        #   limits:
+        #     # memory: "8Gi"
+        #     # cpu: "2000m"
+        #     amd.com/gpu: 1
         readinessProbe:
           httpGet:
             path: /
