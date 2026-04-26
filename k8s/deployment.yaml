@@ -52,7 +52,7 @@ spec:
           periodSeconds: 30
           timeoutSeconds: 10
         volumeMounts:
-          - name: tmp
+          - name: venv
             mountPath: '/app/venv'
       #   # - name: ollama-claim
       #   #   mountPath: /root/.ollama
