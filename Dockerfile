@@ -37,5 +37,7 @@ EXPOSE 7860
 ENV PYTHONUNBUFFERED=1
 ENV COMMANDLINE_ARGS="--listen --port 7860"
 
+USER 1000
+
 # Run the application
 CMD ["./webui.sh"]
