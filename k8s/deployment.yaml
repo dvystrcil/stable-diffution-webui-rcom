@@ -23,6 +23,7 @@ spec:
           effect: "NoSchedule"
       containers:
       - name: sd-webui-rcom
+        imagePullPolicy: Always
         image: ghcr.io/dvystrcil/stable-diffution-webui-rcom:main
         ports:
         - containerPort: 7860
