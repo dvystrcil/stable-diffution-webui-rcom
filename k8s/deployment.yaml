@@ -5,8 +5,6 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  # Remove this line if your cluster doesn't use a default StorageClass
-  # storageClassName: "your-storage-class"
   resources:
     requests:
       storage: 50Gi
@@ -42,7 +40,7 @@ spec:
         - containerPort: 7860
         env:
         - name: COMMANDLINE_ARGS
-          value: "--listen --port 7860"
+          value: "--listen --port 7860 --skip-venv"
         readinessProbe:
           httpGet:
             path: /
@@ -62,8 +60,6 @@ spec:
           mountPath: /app/models
         - name: sd-webui-data
           mountPath: /app/extensions
-        - name: sd-webui-data
-          mountPath: /app/venv
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
