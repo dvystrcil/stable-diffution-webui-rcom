@@ -37,10 +37,6 @@ spec:
         #     # memory: "8Gi"
         #     # cpu: "2000m"
         #     amd.com/gpu: 1
-        securityContext:
-          runAsUser: 1000
-          runAsGroup: 1000
-          fsGroup: 1000
         readinessProbe:
           httpGet:
             path: /
@@ -62,6 +58,10 @@ spec:
       #     name: kfd
       #   - mountPath: /dev/dri
       #     name: dri
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       # volumes:
       # - name: kfd
       #   hostPath:
