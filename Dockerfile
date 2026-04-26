@@ -37,6 +37,7 @@ EXPOSE 7860
 ENV PYTHONUNBUFFERED=1
 ENV COMMANDLINE_ARGS="--listen --port 7860"
 
+RUN chown -R 1000:1000 /app 
 USER 1000
 
 # Run the application
