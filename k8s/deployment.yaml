@@ -52,9 +52,9 @@ spec:
           initialDelaySeconds: 180
           periodSeconds: 30
           timeoutSeconds: 10
-        volumeMounts:
-          - name: venv
-            mountPath: '/app/venv'
+        # volumeMounts:
+        #   - name: venv
+        #     mountPath: '/app/venv'
       #   # - name: ollama-claim
       #   #   mountPath: /root/.ollama
       #   - mountPath: /dev/kfd
@@ -65,9 +65,9 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
-      volumes:
-        - name: venv
-          emptyDir: {}
+      # volumes:
+      #   - name: venv
+      #     emptyDir: {}
       # - name: kfd
       #   hostPath:
       #     path: /dev/kfd
