@@ -1,3 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sd-webui-data-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  # Remove this line if your cluster doesn't use a default StorageClass
+  # storageClassName: "your-storage-class"
+  resources:
+    requests:
+      storage: 50Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -30,14 +43,6 @@ spec:
         env:
         - name: COMMANDLINE_ARGS
           value: "--listen --port 7860"
-        # resources:
-        #   # requests:
-        #   #   memory: "4Gi"
-        #   #   cpu: "1000m"            
-        #   limits:
-        #     # memory: "8Gi"
-        #     # cpu: "2000m"
-        #     amd.com/gpu: 1
         readinessProbe:
           httpGet:
             path: /
@@ -52,28 +57,21 @@ spec:
           initialDelaySeconds: 180
           periodSeconds: 30
           timeoutSeconds: 10
-        # volumeMounts:
-        #   - name: venv
-        #     mountPath: '/app/venv'
-      #   # - name: ollama-claim
-      #   #   mountPath: /root/.ollama
-      #   - mountPath: /dev/kfd
-      #     name: kfd
-      #   - mountPath: /dev/dri
-      #     name: dri
+        volumeMounts:
+        - name: sd-webui-data
+          mountPath: /app/models
+        - name: sd-webui-data
+          mountPath: /app/extensions
+        - name: sd-webui-data
+          mountPath: /app/venv
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
-      # volumes:
-      #   - name: venv
-      #     emptyDir: {}
-      # - name: kfd
-      #   hostPath:
-      #     path: /dev/kfd
-      # - name: dri
-      #   hostPath:
-      #     path: /dev/dri
+      volumes:
+      - name: sd-webui-data
+        persistentVolumeClaim:
+          claimName: sd-webui-data-claim
 ---
 apiVersion: v1
 kind: Service
@@ -87,4 +85,3 @@ spec:
     port: 80
     targetPort: 7860
   type: ClusterIP
-
