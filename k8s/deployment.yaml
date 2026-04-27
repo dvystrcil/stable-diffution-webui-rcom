@@ -47,7 +47,7 @@ spec:
             WEBSITE=$!
             
             echo "Waiting for WebUI to boot (installing dependencies)..."
-            for i in {1..600}; do
+            for i in {1..800}; do
               if (echo > /dev/tcp/localhost/7860) 2>/dev/null; then
                 echo "Dependencies installed and server is ready. Exiting init container."
                 kill $WEBSITE
