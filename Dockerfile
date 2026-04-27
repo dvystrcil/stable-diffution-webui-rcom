@@ -23,6 +23,7 @@ WORKDIR /app
 
 # Copy source code and set ownership in a single step
 COPY --from=source --chown=1000:1000 /app .
+RUN git config --global --add safe.directory /app
 RUN chmod +x ./webui.sh
 
 # Environment variables
