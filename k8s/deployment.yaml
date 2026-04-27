@@ -39,15 +39,12 @@ spec:
         ports:
         - containerPort: 7860
         env:
-        # Disable venv (webui.sh checks venv_dir == "-")
-        - name: venv_dir
-          value: "-"
-        # Bypass Ubuntu 24.04 PEP 668 restriction so pip can install deps
-        - name: PIP_BREAK_SYSTEM_PACKAGES
-          value: "1"
-        # Skip Python version warning + bypass CUDA-specific GPU test (critical for ROCm/AMD)
+        # Removed venv_dir="-" so webui.sh uses default "venv" path
         - name: COMMANDLINE_ARGS
           value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test"
+        # Safeguard against Ubuntu 24.04 system-Python restrictions
+        - name: PIP_BREAK_SYSTEM_PACKAGES
+          value: "1"
         readinessProbe:
           httpGet:
             path: /
@@ -67,6 +64,8 @@ spec:
           mountPath: /app/models
         - name: sd-webui-data
           mountPath: /app/extensions
+        - name: sd-webui-data
+          mountPath: /app/venv
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
