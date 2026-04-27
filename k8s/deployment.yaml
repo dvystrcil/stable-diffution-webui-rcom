@@ -18,7 +18,7 @@ metadata:
   annotations:
     reloader.stakater.com/auto: "true"
 spec:
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app: sd-webui-rcom
@@ -33,7 +33,7 @@ spec:
           value: "yes"
           effect: "NoSchedule"
       
-      # INIT CONTAINER: Handles all heavy dependency installation before the main app starts
+      # INIT CONTAINER: Handles heavy dependency installation
       initContainers:
       - name: sd-webui-init
         image: ghcr.io/dvystrcil/stable-diffution-webui-rcom:main
@@ -43,20 +43,33 @@ spec:
           - -c
           - |
             echo "Starting dependency installation..."
-            ./webui.sh --skip-python-version-check --skip-torch-cuda-test &
-            WEBSITE=$!
+            # Run webui.sh in background, capture all output to a log file
+            ./webui.sh > /tmp/webui-init.log 2>&1 &
+            WEBSITE_PID=$!
             
             echo "Waiting for WebUI to boot (installing dependencies)..."
-            for i in {1..800}; do
+            for i in {1..1800}; do
+              # Check if webui.sh crashed
+              if ! kill -0 $WEBSITE_PID 2>/dev/null; then
+                echo "ERROR: webui.sh exited unexpectedly. Last 20 lines:"
+                tail -n 20 /tmp/webui-init.log
+                exit 1
+              fi
+              # Check if port 7860 is open
               if (echo > /dev/tcp/localhost/7860) 2>/dev/null; then
                 echo "Dependencies installed and server is ready. Exiting init container."
-                kill $WEBSITE
+                kill $WEBSITE_PID
                 exit 0
+              fi
+              # Heartbeat log every 60 seconds
+              if (( i % 60 == 0 )); then
+                echo "Still waiting... ($i seconds elapsed)"
               fi
               sleep 1
             done
             
-            echo "Init container timed out waiting for dependencies."
+            echo "Init container timed out (30 mins). Last log lines:"
+            tail -n 20 /tmp/webui-init.log
             exit 1
         env:
         - name: PIP_CACHE_DIR
@@ -72,6 +85,10 @@ spec:
           mountPath: /app/venv
         - name: sd-webui-data
           mountPath: /app/pip-cache
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          fsGroup: 1000
 
       containers:
       - name: sd-webui-rcom
