@@ -33,7 +33,6 @@ spec:
           value: "yes"
           effect: "NoSchedule"
       
-      # INIT CONTAINER: Handles heavy dependency installation
       initContainers:
       - name: sd-webui-init
         image: ghcr.io/dvystrcil/stable-diffution-webui-rcom:main
@@ -42,26 +41,38 @@ spec:
           - /bin/bash
           - -c
           - |
+            echo "Preparing persistent mounts..."
+            mkdir -p /app/data/venv /app/data/models /app/data/extensions /app/data/pip-cache
+            
+            # Symlink to PVC to avoid K8s empty-directory activation trap
+            rm -rf /app/venv /app/models /app/extensions 2>/dev/null
+            ln -sf /app/data/venv /app/venv
+            ln -sf /app/data/models /app/models
+            ln -sf /app/data/extensions /app/extensions
+            
+            # Bootstrap venv if missing (fixes Python 3.12 pkg_resources issue)
+            if [ ! -f /app/venv/bin/activate ]; then
+              echo "Bootstrapping venv..."
+              python3 -m venv /app/venv
+              /app/venv/bin/pip install --upgrade pip setuptools wheel
+            fi
+            
             echo "Starting dependency installation..."
-            # Run webui.sh in background, capture all output to a log file
             ./webui.sh > /tmp/webui-init.log 2>&1 &
             WEBSITE_PID=$!
             
-            echo "Waiting for WebUI to boot (installing dependencies)..."
+            echo "Waiting for WebUI to boot..."
             for i in {1..1800}; do
-              # Check if webui.sh crashed
               if ! kill -0 $WEBSITE_PID 2>/dev/null; then
                 echo "ERROR: webui.sh exited unexpectedly. Last 20 lines:"
                 tail -n 20 /tmp/webui-init.log
                 exit 1
               fi
-              # Check if port 7860 is open
               if (echo > /dev/tcp/localhost/7860) 2>/dev/null; then
                 echo "Dependencies installed and server is ready. Exiting init container."
                 kill $WEBSITE_PID
                 exit 0
               fi
-              # Heartbeat log every 60 seconds
               if (( i % 60 == 0 )); then
                 echo "Still waiting... ($i seconds elapsed)"
               fi
@@ -73,18 +84,16 @@ spec:
             exit 1
         env:
         - name: PIP_CACHE_DIR
-          value: /app/pip-cache
+          value: /app/data/pip-cache
         - name: COMMANDLINE_ARGS
           value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test"
         volumeMounts:
         - name: sd-webui-data
-          mountPath: /app/models
-        - name: sd-webui-data
-          mountPath: /app/extensions
-        - name: sd-webui-data
-          mountPath: /app/venv
-        - name: sd-webui-data
-          mountPath: /app/pip-cache
+          mountPath: /app/data
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          fsGroup: 1000
 
       containers:
       - name: sd-webui-rcom
@@ -100,7 +109,7 @@ spec:
         - containerPort: 7860
         env:
         - name: PIP_CACHE_DIR
-          value: /app/pip-cache
+          value: /app/data/pip-cache
         - name: COMMANDLINE_ARGS
           value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test"
         readinessProbe:
@@ -119,13 +128,7 @@ spec:
           timeoutSeconds: 10
         volumeMounts:
         - name: sd-webui-data
-          mountPath: /app/models
-        - name: sd-webui-data
-          mountPath: /app/extensions
-        - name: sd-webui-data
-          mountPath: /app/venv
-        - name: sd-webui-data
-          mountPath: /app/pip-cache
+          mountPath: /app/data
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
