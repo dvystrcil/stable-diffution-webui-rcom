@@ -18,7 +18,7 @@ metadata:
   annotations:
     reloader.stakater.com/auto: "true"
 spec:
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app: sd-webui-rcom
@@ -32,41 +32,80 @@ spec:
           operator: "Equal"
           value: "yes"
           effect: "NoSchedule"
-      containers:
-      - name: sd-webui-rcom
-        imagePullPolicy: Always
+      
+      # INIT CONTAINER: Handles all heavy dependency installation before the main app starts
+      initContainers:
+      - name: sd-webui-init
         image: ghcr.io/dvystrcil/stable-diffution-webui-rcom:main
-        
-        # Pre-boot venv if missing, then hand off to webui.sh
+        imagePullPolicy: Always
         command:
           - /bin/bash
           - -c
           - |
-            if [ ! -f /app/venv/bin/activate ]; then
-              echo "Bootstrapping venv..."
-              python3 -m venv /app/venv
-            fi
+            echo "Starting dependency installation..."
+            ./webui.sh --skip-python-version-check --skip-torch-cuda-test &
+            WEBSITE=$!
+            
+            echo "Waiting for WebUI to boot (installing dependencies)..."
+            for i in {1..600}; do
+              if (echo > /dev/tcp/localhost/7860) 2>/dev/null; then
+                echo "Dependencies installed and server is ready. Exiting init container."
+                kill $WEBSITE
+                exit 0
+              fi
+              sleep 1
+            done
+            
+            echo "Init container timed out waiting for dependencies."
+            exit 1
+        env:
+        - name: PIP_CACHE_DIR
+          value: /app/pip-cache
+        - name: COMMANDLINE_ARGS
+          value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test"
+        volumeMounts:
+        - name: sd-webui-data
+          mountPath: /app/models
+        - name: sd-webui-data
+          mountPath: /app/extensions
+        - name: sd-webui-data
+          mountPath: /app/venv
+        - name: sd-webui-data
+          mountPath: /app/pip-cache
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          fsGroup: 1000
+
+      containers:
+      - name: sd-webui-rcom
+        imagePullPolicy: Always
+        image: ghcr.io/dvystrcil/stable-diffution-webui-rcom:main
+        command:
+          - /bin/bash
+          - -c
+          - |
+            echo "Starting WebUI..."
             exec ./webui.sh "$@"
-        
         ports:
         - containerPort: 7860
         env:
+        - name: PIP_CACHE_DIR
+          value: /app/pip-cache
         - name: COMMANDLINE_ARGS
           value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test"
-        - name: PIP_BREAK_SYSTEM_PACKAGES
-          value: "1"
         readinessProbe:
           httpGet:
             path: /
             port: 7860
-          initialDelaySeconds: 120
+          initialDelaySeconds: 10
           periodSeconds: 10
           timeoutSeconds: 5
         livenessProbe:
           httpGet:
             path: /
             port: 7860
-          initialDelaySeconds: 180
+          initialDelaySeconds: 60
           periodSeconds: 30
           timeoutSeconds: 10
         volumeMounts:
@@ -76,6 +115,8 @@ spec:
           mountPath: /app/extensions
         - name: sd-webui-data
           mountPath: /app/venv
+        - name: sd-webui-data
+          mountPath: /app/pip-cache
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
