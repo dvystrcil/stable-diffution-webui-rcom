@@ -17,6 +17,8 @@ RUN apt-get update && \
     wget \
     git \
     curl \
+    libtcmalloc-minimal4 \
+    python3.12-venv \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
