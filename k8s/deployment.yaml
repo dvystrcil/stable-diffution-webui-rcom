@@ -90,10 +90,6 @@ spec:
         volumeMounts:
         - name: sd-webui-data
           mountPath: /app/data
-        securityContext:
-          runAsUser: 1000
-          runAsGroup: 1000
-          fsGroup: 1000
 
       containers:
       - name: sd-webui-rcom
