@@ -36,13 +36,23 @@ spec:
       - name: sd-webui-rcom
         imagePullPolicy: Always
         image: ghcr.io/dvystrcil/stable-diffution-webui-rcom:main
+        
+        # Pre-boot venv if missing, then hand off to webui.sh
+        command:
+          - /bin/bash
+          - -c
+          - |
+            if [ ! -f /app/venv/bin/activate ]; then
+              echo "Bootstrapping venv..."
+              python3 -m venv /app/venv
+            fi
+            exec ./webui.sh "$@"
+        
         ports:
         - containerPort: 7860
         env:
-        # Removed venv_dir="-" so webui.sh uses default "venv" path
         - name: COMMANDLINE_ARGS
           value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test"
-        # Safeguard against Ubuntu 24.04 system-Python restrictions
         - name: PIP_BREAK_SYSTEM_PACKAGES
           value: "1"
         readinessProbe:
