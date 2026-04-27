@@ -85,10 +85,6 @@ spec:
           mountPath: /app/venv
         - name: sd-webui-data
           mountPath: /app/pip-cache
-        securityContext:
-          runAsUser: 1000
-          runAsGroup: 1000
-          fsGroup: 1000
 
       containers:
       - name: sd-webui-rcom
