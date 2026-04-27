@@ -36,11 +36,18 @@ spec:
       - name: sd-webui-rcom
         imagePullPolicy: Always
         image: ghcr.io/dvystrcil/stable-diffution-webui-rcom:main
+        
+        # Override Dockerfile CMD to pass --skip-venv directly to webui.sh
+        command: ["/bin/bash", "./webui.sh", "--skip-venv"]
+        
         ports:
         - containerPort: 7860
         env:
         - name: COMMANDLINE_ARGS
-          value: "--listen --port 7860 --skip-venv"
+          value: "--listen --port 7860"
+        # Bypass Ubuntu 24.04 PEP 668 restriction when webui.sh runs pip install
+        - name: PIP_BREAK_SYSTEM_PACKAGES
+          value: "1"
         readinessProbe:
           httpGet:
             path: /
