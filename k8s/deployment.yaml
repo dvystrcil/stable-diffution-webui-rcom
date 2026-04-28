@@ -1,3 +1,17 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/instance: sd-webui-rcom
+    app.kubernetes.io/name: sd-webui-rcom
+    app.kubernetes.io/part-of: sd-webui-rcom
+  name: sd-webui-rcom
+  namespace: sd-webui-rcom
+imagePullSecrets:
+- name: sd-webui-rcom-harbor-pull
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -19,6 +33,7 @@ metadata:
     reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
+  revisionHistoryLimit: 1
   selector:
     matchLabels:
       app: sd-webui-rcom
@@ -32,7 +47,8 @@ spec:
           operator: "Equal"
           value: "yes"
           effect: "NoSchedule"
-
+      serviceAccount: sd-webui-rcom
+      serviceAccountName: sd-webui-rcom
       initContainers:
       - name: sd-webui-init
         image: ghcr.io/dvystrcil/stable-diffution-webui-rcom:main
