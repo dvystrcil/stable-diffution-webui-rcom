@@ -39,11 +39,8 @@ jobs:
 
     - name: Create buildkitd config
       run: |
-        cat > /tmp/buildkitd.toml << 'TOML'
-[registry."harbor-core.harbor.svc.cluster.local:80"]
-  http = true
-  insecure = true
-TOML
+        printf '[registry."harbor-core.harbor.svc.cluster.local:80"]\n  http = true\n  insecure = true\n' > /tmp/buildkitd.toml
+        cat /tmp/buildkitd.toml
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
