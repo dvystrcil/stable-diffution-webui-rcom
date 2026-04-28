@@ -7,13 +7,13 @@ template:
   spec:
     initContainers:
     - name: init-dind-externals
-      image: ghcr.io/actions/actions-runner:latest
+      image: harbor.sirddail.net/arc/actions-runner:latest
       command: ["cp", "-r", "/home/runner/externals/.", "/home/runner/tmpDir/"]
       volumeMounts:
       - name: dind-externals
         mountPath: /home/runner/tmpDir
     - name: init-docker-config
-      image: ghcr.io/actions/actions-runner:latest
+      image: harbor.sirddail.net/arc/actions-runner:latest
       command:
       - sh
       - -c
@@ -21,29 +21,15 @@ template:
         mkdir -p /home/runner/.docker
         cp /harbor-creds/config.json /home/runner/.docker/config.json
         chmod 600 /home/runner/.docker/config.json
-        mkdir -p /etc/docker/certs.d/harbor-core.harbor.svc.cluster.local
-        cp /harbor-ca/ca.crt /etc/docker/certs.d/harbor-core.harbor.svc.cluster.local/ca.crt
-        mkdir -p /etc/buildkit
-        cat > /etc/buildkit/buildkitd.toml << TOML
-        [registry."harbor-core.harbor.svc.cluster.local"]
-          ca=["/etc/docker/certs.d/harbor-core.harbor.svc.cluster.local/ca.crt"]
-        TOML
       volumeMounts:
       - name: harbor-creds
         mountPath: /harbor-creds
         readOnly: true
       - name: docker-config
         mountPath: /home/runner/.docker
-      - name: harbor-ca
-        mountPath: /harbor-ca
-        readOnly: true
-      - name: docker-certs
-        mountPath: /etc/docker/certs.d
-      - name: buildkit-config
-        mountPath: /etc/buildkit
     containers:
     - name: runner
-      image: ghcr.io/actions/actions-runner:latest
+      image: harbor.sirddail.net/arc/actions-runner:latest
       command: ["/home/runner/run.sh"]
       env:
       - name: DOCKER_HOST
@@ -57,8 +43,6 @@ template:
         mountPath: /home/runner/externals
       - name: docker-config
         mountPath: /home/runner/.docker
-      - name: docker-certs
-        mountPath: /etc/docker/certs.d
     - name: dind
       image: docker:dind
       args:
@@ -74,10 +58,6 @@ template:
         mountPath: /var/run
       - name: dind-externals
         mountPath: /home/runner/externals
-      - name: docker-certs
-        mountPath: /etc/docker/certs.d
-      - name: buildkit-config
-        mountPath: /etc/buildkit
     volumes:
     - name: work
       emptyDir: {}
@@ -87,16 +67,9 @@ template:
       emptyDir: {}
     - name: docker-config
       emptyDir: {}
-    - name: docker-certs
-      emptyDir: {}
-    - name: buildkit-config
-      emptyDir: {}
     - name: harbor-creds
       secret:
         secretName: sd-runner-harbor-pull
         items:
         - key: .dockerconfigjson
           path: config.json
-    - name: harbor-ca
-      configMap:
-        name: harbor-internal-ca
