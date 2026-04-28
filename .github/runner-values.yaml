@@ -44,7 +44,7 @@ template:
       - name: docker-config
         mountPath: /home/runner/.docker
     - name: dind
-      image: docker:dind
+      image: harbor.sirddail.net/arc/dind:latest
       args:
       - dockerd
       - --host=unix:///var/run/docker.sock
