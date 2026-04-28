@@ -37,20 +37,18 @@ jobs:
         echo "Docker config exists: $(test -f ~/.docker/config.json && echo yes || echo no)"
         cat ~/.docker/config.json | python3 -c "import sys,json; d=json.load(sys.stdin); print('Registries:', list(d['auths'].keys()))"
 
-    - name: Configure buildx for insecure internal registry
+    - name: Create buildkitd config
       run: |
-        mkdir -p ~/.config/buildkitd
-        cat > ~/.config/buildkitd/buildkitd.toml << 'TOML'
-        [registry."harbor-core.harbor.svc.cluster.local:80"]
-          http = true
-          insecure = true
-        TOML
+        cat > /tmp/buildkitd.toml << 'TOML'
+[registry."harbor-core.harbor.svc.cluster.local:80"]
+  http = true
+  insecure = true
+TOML
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
       with:
-        config: ${{ runner.temp }}/buildkitd.toml
-        buildkitd-config: ~/.config/buildkitd/buildkitd.toml
+        buildkitd-config: /tmp/buildkitd.toml
 
     - name: Extract metadata
       id: meta
