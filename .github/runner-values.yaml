@@ -5,6 +5,8 @@ maxRunners: 3
 
 template:
   spec:
+    imagePullSecrets:
+    - name: sd-runner-harbor-pull
     initContainers:
     - name: init-dind-externals
       image: harbor.sirddail.net/arc/actions-runner:latest
