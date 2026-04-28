@@ -17,13 +17,23 @@ template:
       command:
       - sh
       - -c
-      - mkdir -p /home/runner/.docker && cp /harbor-creds/config.json /home/runner/.docker/config.json && chmod 600 /home/runner/.docker/config.json
+      - |
+        mkdir -p /home/runner/.docker
+        cp /harbor-creds/config.json /home/runner/.docker/config.json
+        chmod 600 /home/runner/.docker/config.json
+        mkdir -p /etc/docker/certs.d/harbor-core.harbor.svc.cluster.local
+        cp /harbor-ca/ca.crt /etc/docker/certs.d/harbor-core.harbor.svc.cluster.local/ca.crt
       volumeMounts:
       - name: harbor-creds
         mountPath: /harbor-creds
         readOnly: true
       - name: docker-config
         mountPath: /home/runner/.docker
+      - name: harbor-ca
+        mountPath: /harbor-ca
+        readOnly: true
+      - name: docker-certs
+        mountPath: /etc/docker/certs.d
     containers:
     - name: runner
       image: ghcr.io/actions/actions-runner:latest
@@ -40,6 +50,8 @@ template:
         mountPath: /home/runner/externals
       - name: docker-config
         mountPath: /home/runner/.docker
+      - name: docker-certs
+        mountPath: /etc/docker/certs.d
     - name: dind
       image: docker:dind
       args:
@@ -55,6 +67,8 @@ template:
         mountPath: /var/run
       - name: dind-externals
         mountPath: /home/runner/externals
+      - name: docker-certs
+        mountPath: /etc/docker/certs.d
     volumes:
     - name: work
       emptyDir: {}
@@ -64,9 +78,14 @@ template:
       emptyDir: {}
     - name: docker-config
       emptyDir: {}
+    - name: docker-certs
+      emptyDir: {}
     - name: harbor-creds
       secret:
         secretName: sd-runner-harbor-pull
         items:
         - key: .dockerconfigjson
           path: config.json
+    - name: harbor-ca
+      configMap:
+        name: harbor-internal-ca
