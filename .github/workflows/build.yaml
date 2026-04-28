@@ -17,8 +17,8 @@ on:
   workflow_dispatch:
 
 env:
-  INTERNAL_REGISTRY: harbor-core.harbor.svc.cluster.local:80
-  EXTERNAL_REGISTRY: harbor.sirddail.net
+  REGISTRY: harbor.sirddail.net
+  INTERNAL_REGISTRY: harbor-registry.harbor.svc.cluster.local:5000
   PROJECT: stable-diffusion
   IMAGE_NAME: stable-diffution-webui-rcom
 
@@ -37,16 +37,9 @@ jobs:
         echo "Docker config exists: $(test -f ~/.docker/config.json && echo yes || echo no)"
         cat ~/.docker/config.json | python3 -c "import sys,json; d=json.load(sys.stdin); print('Registries:', list(d['auths'].keys()))"
 
-    - name: Configure Docker daemon for insecure registry
+    - name: Create buildkitd config for internal registry
       run: |
-        sudo mkdir -p /etc/docker
-        echo '{"insecure-registries": ["harbor-core.harbor.svc.cluster.local:80"]}' | sudo tee /etc/docker/daemon.json
-        sudo kill -HUP $(pgrep dockerd) || true
-        sleep 2
-
-    - name: Create buildkitd config
-      run: |
-        printf '[registry."harbor-core.harbor.svc.cluster.local:80"]\n  http = true\n  insecure = true\n' > /tmp/buildkitd.toml
+        printf '[registry."harbor-registry.harbor.svc.cluster.local:5000"]\n  http = true\n  insecure = true\n' > /tmp/buildkitd.toml
         cat /tmp/buildkitd.toml
 
     - name: Set up Docker Buildx
@@ -58,7 +51,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ${{ env.EXTERNAL_REGISTRY }}/${{ env.PROJECT }}/${{ env.IMAGE_NAME }}
+        images: ${{ env.REGISTRY }}/${{ env.PROJECT }}/${{ env.IMAGE_NAME }}
         tags: |
           type=ref,event=branch
           type=ref,event=pr
@@ -82,4 +75,4 @@ jobs:
     - name: Test image
       if: github.event_name != 'pull_request'
       run: |
-        docker run --rm ${{ env.EXTERNAL_REGISTRY }}/${{ env.PROJECT }}/${{ env.IMAGE_NAME }}:${{ github.sha }} --help || true
+        docker run --rm ${{ env.REGISTRY }}/${{ env.PROJECT }}/${{ env.IMAGE_NAME }}:${{ github.sha }} --help || true
