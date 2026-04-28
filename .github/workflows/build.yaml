@@ -37,6 +37,13 @@ jobs:
         echo "Docker config exists: $(test -f ~/.docker/config.json && echo yes || echo no)"
         cat ~/.docker/config.json | python3 -c "import sys,json; d=json.load(sys.stdin); print('Registries:', list(d['auths'].keys()))"
 
+    - name: Configure Docker daemon for insecure registry
+      run: |
+        sudo mkdir -p /etc/docker
+        echo '{"insecure-registries": ["harbor-core.harbor.svc.cluster.local:80"]}' | sudo tee /etc/docker/daemon.json
+        sudo kill -HUP $(pgrep dockerd) || true
+        sleep 2
+
     - name: Create buildkitd config
       run: |
         printf '[registry."harbor-core.harbor.svc.cluster.local:80"]\n  http = true\n  insecure = true\n' > /tmp/buildkitd.toml
