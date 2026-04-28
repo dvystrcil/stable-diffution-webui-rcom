@@ -32,28 +32,23 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Extract Harbor credentials
-      id: creds
-      run: |
-        python3 << 'PYEOF'
-        import json, base64, os
-        with open('/home/runner/.docker/config.json') as f:
-            d = json.load(f)
-        auth = d['auths']['harbor.sirddail.net']['auth']
-        decoded = base64.b64decode(auth).decode()
-        username, password = decoded.split(':', 1)
-        gh_output = os.environ['GITHUB_OUTPUT']
-        with open(gh_output, 'a') as f:
-            f.write(f'username={username}\n')
-            f.write(f'password={password}\n')
-        PYEOF
+    - name: Fetch Harbor credentials from Infisical
+      uses: Infisical/secrets-action@v1.0.7
+      with:
+        client-id: ${{ secrets.INFISICAL_CLIENT_ID }}
+        client-secret: ${{ secrets.INFISICAL_CLIENT_SECRET }}
+        env-slug: prod
+        project-slug: homelab-bz-gt
+        secret-path: /
+        export-type: env
+        secrets-filter: HB_USERNAME,HB_PASSWORD,HB_REGISTRY
 
     - name: Log in to Harbor
       uses: docker/login-action@v3
       with:
         registry: ${{ env.REGISTRY }}
-        username: ${{ steps.creds.outputs.username }}
-        password: ${{ steps.creds.outputs.password }}
+        username: ${{ env.HB_USERNAME }}
+        password: ${{ env.HB_PASSWORD }}
 
     - name: Create buildkitd config
       run: printf '[registry."harbor-registry.harbor.svc.cluster.local:5000"]\n  http = true\n  insecure = true\n' > /tmp/buildkitd.toml
