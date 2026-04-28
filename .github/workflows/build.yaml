@@ -35,14 +35,11 @@ jobs:
     - name: Extract Harbor credentials
       id: creds
       run: |
-        python3 -c "
-import json, base64
-d = json.load(open('/home/runner/.docker/config.json'))
-auth = d['auths']['harbor.sirddail.net']['auth']
-u, p = base64.b64decode(auth).decode().split(':', 1)
-print(f'username={u}')
-print(f'password={p}')
-" >> $GITHUB_OUTPUT
+        HARBOR_AUTH=$(cat /home/runner/.docker/config.json | python3 -c "import sys,json,base64; d=json.load(sys.stdin); a=d['auths']['harbor.sirddail.net']['auth']; t=base64.b64decode(a).decode(); u,p=t.split(':',1); print(u+' '+p)")
+        HARBOR_USER=$(echo $HARBOR_AUTH | cut -d' ' -f1)
+        HARBOR_PASS=$(echo $HARBOR_AUTH | cut -d' ' -f2)
+        echo "username=$HARBOR_USER" >> $GITHUB_OUTPUT
+        echo "password=$HARBOR_PASS" >> $GITHUB_OUTPUT
 
     - name: Log in to Harbor
       uses: docker/login-action@v3
