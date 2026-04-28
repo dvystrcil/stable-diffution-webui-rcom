@@ -2,13 +2,13 @@
 ARG STABLE_DIFFUSION_TAG=v1.10.1
 
 # Stage 1: Fetch source code
-FROM alpine/git:latest AS source
+FROM harbor.sirddail.net/dockerhub-proxy/alpine/git:latest AS source
 ARG STABLE_DIFFUSION_TAG
 WORKDIR /app
 RUN git clone --depth 1 --branch ${STABLE_DIFFUSION_TAG} https://github.com/AUTOMATIC1111/stable-diffusion-webui.git .
 
 # Stage 2: Production image with ROCm/PyTorch
-FROM rocm/pytorch:rocm7.0.2_ubuntu24.04_py3.12_pytorch_release_2.8.0
+FROM harbor.sirddail.net/dockerhub-proxy/rocm/pytorch:rocm7.0.2_ubuntu24.04_py3.12_pytorch_release_2.8.0
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -18,9 +18,11 @@ RUN apt-get update && \
 RUN git config --system --add safe.directory /app
 
 WORKDIR /app
-# 👇 FIX: Grant UID 1000 ownership of /app so webui.sh can create dirs/symlinks
+
 RUN chown 1000:1000 /app && chmod 755 /app
+
 COPY --from=source --chown=1000:1000 /app .
+
 RUN chmod +x ./webui.sh
 
 ENV PYTHONUNBUFFERED=1
