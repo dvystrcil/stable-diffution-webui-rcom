@@ -51,7 +51,7 @@ spec:
       serviceAccountName: sd-webui-rcom
       initContainers:
       - name: sd-webui-init
-        image: ghcr.io/dvystrcil/stable-diffution-webui-rcom:main
+        image: harbor-core.harbor.svc.cluster.local/stable-diffusion/stable-diffution-webui-rcom:main
         imagePullPolicy: Always
         command:
           - /bin/bash
@@ -99,7 +99,7 @@ spec:
       containers:
       - name: sd-webui-rcom
         imagePullPolicy: Always
-        image: ghcr.io/dvystrcil/stable-diffution-webui-rcom:main
+        image: harbor-core.harbor.svc.cluster.local/stable-diffusion/stable-diffution-webui-rcom:main
         command:
           - /bin/bash
           - -c
