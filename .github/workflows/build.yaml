@@ -43,6 +43,13 @@ jobs:
         export-type: env
         domain: http://infisical-infisical-standalone-infisical.infisical.svc.cluster.local:8080
 
+    - name: Configure Docker daemon for insecure internal registry
+      run: |
+        sudo mkdir -p /etc/docker
+        sudo sh -c 'echo "{\"insecure-registries\":[\"harbor-registry.harbor.svc.cluster.local:5000\"]}" > /etc/docker/daemon.json'
+        sudo kill -HUP $(pgrep dockerd)
+        sleep 3
+
     - name: Log in to Harbor (external)
       uses: docker/login-action@v3
       with:
