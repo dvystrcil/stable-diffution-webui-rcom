@@ -9,22 +9,13 @@ template:
     - name: harbor-creds
       secret:
         secretName: sd-runner-harbor-pull
-    - name: docker-config
-      emptyDir: {}
-    initContainers:
-    - name: setup-docker-config
-      image: busybox
-      command:
-      - sh
-      - -c
-      - mkdir -p /root/.docker && cp /harbor-creds/.dockerconfigjson /root/.docker/config.json
-      volumeMounts:
-      - name: harbor-creds
-        mountPath: /harbor-creds
-      - name: docker-config
-        mountPath: /root/.docker
+        items:
+        - key: .dockerconfigjson
+          path: config.json
     containers:
     - name: runner
       volumeMounts:
-      - name: docker-config
-        mountPath: /root/.docker
+      - name: harbor-creds
+        mountPath: /root/.docker/config.json
+        subPath: config.json
+        readOnly: true
