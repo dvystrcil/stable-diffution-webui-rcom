@@ -62,7 +62,7 @@ jobs:
       with:
         buildkitd-config-inline: |
           [registry."harbor-core.harbor.svc.cluster.local"]
-            insecure_skip_verify = true
+            ca=["/etc/docker/certs.d/harbor-core.harbor.svc.cluster.local/ca.crt"]
 
     - name: Extract metadata
       id: meta
