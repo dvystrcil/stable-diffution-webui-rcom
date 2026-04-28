@@ -12,6 +12,18 @@ template:
       volumeMounts:
       - name: dind-externals
         mountPath: /home/runner/tmpDir
+    - name: init-docker-config
+      image: ghcr.io/actions/actions-runner:latest
+      command:
+      - sh
+      - -c
+      - mkdir -p /home/runner/.docker && cp /harbor-creds/config.json /home/runner/.docker/config.json && chmod 600 /home/runner/.docker/config.json
+      volumeMounts:
+      - name: harbor-creds
+        mountPath: /harbor-creds
+        readOnly: true
+      - name: docker-config
+        mountPath: /home/runner/.docker
     containers:
     - name: runner
       image: ghcr.io/actions/actions-runner:latest
@@ -26,10 +38,8 @@ template:
         mountPath: /var/run
       - name: dind-externals
         mountPath: /home/runner/externals
-      - name: harbor-creds
-        mountPath: /home/runner/.docker/config.json
-        subPath: config.json
-        readOnly: true
+      - name: docker-config
+        mountPath: /home/runner/.docker
     - name: dind
       image: docker:dind
       args:
@@ -51,6 +61,8 @@ template:
     - name: dind-sock
       emptyDir: {}
     - name: dind-externals
+      emptyDir: {}
+    - name: docker-config
       emptyDir: {}
     - name: harbor-creds
       secret:
