@@ -62,7 +62,7 @@ jobs:
       with:
         buildkitd-config-inline: |
           [registry."harbor-core.harbor.svc.cluster.local"]
-            ca=["/etc/docker/certs.d/harbor-core.harbor.svc.cluster.local/ca.crt"]
+            ca=["/etc/ssl/certs/ca-certificates.crt"]
 
     - name: Extract metadata
       id: meta
