@@ -27,7 +27,7 @@ template:
       - name: dind-externals
         mountPath: /home/runner/externals
       - name: harbor-creds
-        mountPath: /root/.docker/config.json
+        mountPath: /home/runner/.docker/config.json
         subPath: config.json
         readOnly: true
     - name: dind

@@ -32,27 +32,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Load Harbor credentials from mounted docker config
-      id: harbor-creds
+    - name: Verify Harbor credentials
       run: |
-        USERNAME=$(cat /root/.docker/config.json | python3 -c "import sys,json,base64; d=json.load(sys.stdin); auth=list(d['auths'].values())[0]['auth']; print(base64.b64decode(auth).decode().split(':')[0])")
-        PASSWORD=$(cat /root/.docker/config.json | python3 -c "import sys,json,base64; d=json.load(sys.stdin); auth=list(d['auths'].values())[0]['auth']; print(base64.b64decode(auth).decode().split(':',1)[1])")
-        echo "username=$USERNAME" >> $GITHUB_OUTPUT
-        echo "password=$PASSWORD" >> $GITHUB_OUTPUT
-
-    - name: Log in to Harbor (internal)
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.INTERNAL_REGISTRY }}
-        username: ${{ steps.harbor-creds.outputs.username }}
-        password: ${{ steps.harbor-creds.outputs.password }}
-
-    - name: Log in to Harbor (external)
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.EXTERNAL_REGISTRY }}
-        username: ${{ steps.harbor-creds.outputs.username }}
-        password: ${{ steps.harbor-creds.outputs.password }}
+        echo "Docker config exists: $(test -f ~/.docker/config.json && echo yes || echo no)"
+        cat ~/.docker/config.json | python3 -c "import sys,json; d=json.load(sys.stdin); print('Registries:', list(d['auths'].keys()))"
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
