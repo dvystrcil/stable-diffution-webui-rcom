@@ -5,8 +5,10 @@ maxRunners: 3
 
 template:
   spec:
+    nodeSelector:
+      kubernetes.io/hostname: k8s-node-hpm-01
     imagePullSecrets:
-    - name: sd-runner-harbor-pull
+    - name: arc-runner-harbor-pull
     initContainers:
     - name: init-dind-externals
       image: harbor.sirddail.net/arc/actions-runner:latest
@@ -53,6 +55,14 @@ template:
       - --group=123
       securityContext:
         privileged: true
+      resources:
+        requests:
+          memory: "4Gi"
+          cpu: "2"
+          ephemeral-storage: "20Gi"
+        limits:
+          memory: "16Gi"
+          ephemeral-storage: "60Gi"
       volumeMounts:
       - name: work
         mountPath: /home/runner/_work
@@ -71,7 +81,7 @@ template:
       emptyDir: {}
     - name: harbor-creds
       secret:
-        secretName: sd-runner-harbor-pull
+        secretName: arc-runner-harbor-pull
         items:
         - key: .dockerconfigjson
           path: config.json
