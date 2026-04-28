@@ -62,7 +62,7 @@ jobs:
       with:
         buildkitd-config-inline: |
           [registry."harbor-core.harbor.svc.cluster.local"]
-            insecure = true
+            insecure_skip_verify = true
 
     - name: Extract metadata
       id: meta
