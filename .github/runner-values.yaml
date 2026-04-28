@@ -23,6 +23,11 @@ template:
         chmod 600 /home/runner/.docker/config.json
         mkdir -p /etc/docker/certs.d/harbor-core.harbor.svc.cluster.local
         cp /harbor-ca/ca.crt /etc/docker/certs.d/harbor-core.harbor.svc.cluster.local/ca.crt
+        mkdir -p /etc/buildkit
+        cat > /etc/buildkit/buildkitd.toml << TOML
+        [registry."harbor-core.harbor.svc.cluster.local"]
+          ca=["/etc/docker/certs.d/harbor-core.harbor.svc.cluster.local/ca.crt"]
+        TOML
       volumeMounts:
       - name: harbor-creds
         mountPath: /harbor-creds
@@ -34,6 +39,8 @@ template:
         readOnly: true
       - name: docker-certs
         mountPath: /etc/docker/certs.d
+      - name: buildkit-config
+        mountPath: /etc/buildkit
     containers:
     - name: runner
       image: ghcr.io/actions/actions-runner:latest
@@ -69,6 +76,8 @@ template:
         mountPath: /home/runner/externals
       - name: docker-certs
         mountPath: /etc/docker/certs.d
+      - name: buildkit-config
+        mountPath: /etc/buildkit
     volumes:
     - name: work
       emptyDir: {}
@@ -79,6 +88,8 @@ template:
     - name: docker-config
       emptyDir: {}
     - name: docker-certs
+      emptyDir: {}
+    - name: buildkit-config
       emptyDir: {}
     - name: harbor-creds
       secret:
