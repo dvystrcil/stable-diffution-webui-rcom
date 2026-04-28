@@ -5,17 +5,56 @@ maxRunners: 3
 
 template:
   spec:
+    initContainers:
+    - name: init-dind-externals
+      image: ghcr.io/actions/actions-runner:latest
+      command: ["cp", "-r", "/home/runner/externals/.", "/home/runner/tmpDir/"]
+      volumeMounts:
+      - name: dind-externals
+        mountPath: /home/runner/tmpDir
+    containers:
+    - name: runner
+      image: ghcr.io/actions/actions-runner:latest
+      command: ["/home/runner/run.sh"]
+      env:
+      - name: DOCKER_HOST
+        value: unix:///var/run/docker.sock
+      volumeMounts:
+      - name: work
+        mountPath: /home/runner/_work
+      - name: dind-sock
+        mountPath: /var/run
+      - name: dind-externals
+        mountPath: /home/runner/externals
+      - name: harbor-creds
+        mountPath: /root/.docker/config.json
+        subPath: config.json
+        readOnly: true
+    - name: dind
+      image: docker:dind
+      args:
+      - dockerd
+      - --host=unix:///var/run/docker.sock
+      - --group=123
+      securityContext:
+        privileged: true
+      volumeMounts:
+      - name: work
+        mountPath: /home/runner/_work
+      - name: dind-sock
+        mountPath: /var/run
+      - name: dind-externals
+        mountPath: /home/runner/externals
     volumes:
+    - name: work
+      emptyDir: {}
+    - name: dind-sock
+      emptyDir: {}
+    - name: dind-externals
+      emptyDir: {}
     - name: harbor-creds
       secret:
         secretName: sd-runner-harbor-pull
         items:
         - key: .dockerconfigjson
           path: config.json
-    containers:
-    - name: runner
-      volumeMounts:
-      - name: harbor-creds
-        mountPath: /root/.docker/config.json
-        subPath: config.json
-        readOnly: true
