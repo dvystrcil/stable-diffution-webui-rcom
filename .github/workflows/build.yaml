@@ -31,10 +31,23 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Load Harbor credentials from mounted docker config
+      id: harbor-creds
+      run: |
+        USERNAME=$(cat /root/.docker/config.json | python3 -c "import sys,json,base64; d=json.load(sys.stdin); auth=list(d['auths'].values())[0]['auth']; print(base64.b64decode(auth).decode().split(':')[0])")
+        PASSWORD=$(cat /root/.docker/config.json | python3 -c "import sys,json,base64; d=json.load(sys.stdin); auth=list(d['auths'].values())[0]['auth']; print(base64.b64decode(auth).decode().split(':',1)[1])")
+        echo "username=$USERNAME" >> $GITHUB_OUTPUT
+        echo "password=$PASSWORD" >> $GITHUB_OUTPUT
+
+    - name: Log in to Harbor
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ steps.harbor-creds.outputs.username }}
+        password: ${{ steps.harbor-creds.outputs.password }}
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-      with:
-        driver-opts: network=host
 
     - name: Extract metadata
       id: meta
