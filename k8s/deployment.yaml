@@ -64,10 +64,11 @@ spec:
             [ -L /app/extensions ] || ln -s /app/data/extensions /app/extensions
 
             if [ ! -f /app/data/venv/bin/activate ]; then
-              echo "Creating venv with setuptools..."
+              echo "Creating venv..."
               python3 -m venv /app/data/venv
-              /app/data/venv/bin/pip install --quiet setuptools
             fi
+            echo "Ensuring setuptools..."
+            /app/data/venv/bin/pip install --quiet setuptools
 
             echo "Starting dependency installation..."
             ./webui.sh > /tmp/webui-init.log 2>&1 &
