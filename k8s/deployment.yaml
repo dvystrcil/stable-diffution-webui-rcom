@@ -51,7 +51,7 @@ spec:
       serviceAccountName: sd-webui-rcom
       initContainers:
       - name: sd-webui-init
-        image: harbor.sirddail.net/stable-diffusion/stable-diffution-webui-rcom:main
+        image: harbor.sirddail.net/stable-diffusion/stable-diffution-webui-rcom:latest
         imagePullPolicy: Always
         command:
           - /bin/bash
@@ -99,6 +99,8 @@ spec:
           value: /app/data/pip-cache
         - name: COMMANDLINE_ARGS
           value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test"
+        - name: STABLE_DIFFUSION_REPO
+          value: "https://github.com/w-e-w/stablediffusion.git"
         volumeMounts:
         - name: sd-webui-data
           mountPath: /app/data
@@ -106,7 +108,7 @@ spec:
       containers:
       - name: sd-webui-rcom
         imagePullPolicy: Always
-        image: harbor.sirddail.net/stable-diffusion/stable-diffution-webui-rcom:main
+        image: harbor.sirddail.net/stable-diffusion/stable-diffution-webui-rcom:latest
         command:
           - /bin/bash
           - -c
@@ -122,6 +124,8 @@ spec:
           value: /app/data/pip-cache
         - name: COMMANDLINE_ARGS
           value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test"
+        - name: STABLE_DIFFUSION_REPO
+          value: "https://github.com/w-e-w/stablediffusion.git"
         readinessProbe:
           httpGet:
             path: /
