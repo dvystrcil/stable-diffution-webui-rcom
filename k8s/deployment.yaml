@@ -63,6 +63,12 @@ spec:
             [ -L /app/models ] || ln -s /app/data/models /app/models
             [ -L /app/extensions ] || ln -s /app/data/extensions /app/extensions
 
+            if [ ! -f /app/data/venv/bin/activate ]; then
+              echo "Creating venv with setuptools..."
+              python3 -m venv /app/data/venv
+              /app/data/venv/bin/pip install --quiet setuptools
+            fi
+
             echo "Starting dependency installation..."
             ./webui.sh > /tmp/webui-init.log 2>&1 &
             WEBSITE_PID=$!
