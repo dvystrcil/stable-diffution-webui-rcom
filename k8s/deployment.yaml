@@ -67,8 +67,12 @@ spec:
               echo "Creating venv..."
               python3 -m venv /app/data/venv
             fi
-            echo "Ensuring setuptools..."
-            /app/data/venv/bin/pip install --quiet setuptools
+            echo "Ensuring build deps..."
+            /app/data/venv/bin/pip install --quiet setuptools wheel
+
+            echo "Pre-installing CLIP (Python 3.12 pkg_resources workaround)..."
+            /app/data/venv/bin/pip install --quiet --no-build-isolation \
+              "https://github.com/openai/CLIP/archive/d50d76daa670286dd6cacf3bcd80b5e4823fc8e1.zip"
 
             echo "Starting dependency installation..."
             ./webui.sh > /tmp/webui-init.log 2>&1 &
@@ -97,8 +101,6 @@ spec:
           value: /app/data/venv
         - name: PIP_CACHE_DIR
           value: /app/data/pip-cache
-        - name: PIP_NO_BUILD_ISOLATION
-          value: "1"
         - name: COMMANDLINE_ARGS
           value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test"
         volumeMounts:
