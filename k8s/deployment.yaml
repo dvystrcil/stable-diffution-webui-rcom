@@ -51,7 +51,7 @@ spec:
       serviceAccountName: sd-webui-rcom
       initContainers:
       - name: sd-webui-init
-        image: harbor.sirddail.net/stable-diffusion/stable-diffution-webui-rcom:latest
+        image: harbor.sirddail.net/stable-diffusion/stable-diffution-webui-rcom:dev
         imagePullPolicy: Always
         command:
           - /bin/bash
