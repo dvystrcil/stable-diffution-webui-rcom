@@ -3,7 +3,6 @@ name: Build and Push Docker Image
 on:
   push:
     branches: [ main, develop ]
-    tags: [ 'v*' ]
     paths-ignore:
       - 'k8s/**'
       - '*.md'
@@ -25,7 +24,7 @@ jobs:
   build:
     runs-on: stable-diffution-webui-rcom-runner
     permissions:
-      contents: read
+      contents: write
 
     steps:
     - name: Checkout repository
@@ -62,11 +61,9 @@ jobs:
       with:
         images: ${{ env.INTERNAL_REGISTRY }}/${{ env.PROJECT }}/${{ env.IMAGE_NAME }}
         tags: |
-          type=ref,event=branch
+          type=raw,value=dev,enable=${{ github.ref == 'refs/heads/main' }}
+          type=ref,event=branch,enable=${{ github.ref != 'refs/heads/main' }}
           type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=sha,prefix={{branch}}-
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
@@ -81,7 +78,23 @@ jobs:
         cache-from: type=registry,ref=${{ env.INTERNAL_REGISTRY }}/${{ env.PROJECT }}/${{ env.IMAGE_NAME }}:buildcache
         cache-to: type=registry,ref=${{ env.INTERNAL_REGISTRY }}/${{ env.PROJECT }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
 
-    - name: Test image
-      if: github.event_name != 'pull_request'
+    - name: Create GitHub release
+      if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
       run: |
-        docker run --rm ${{ env.INTERNAL_REGISTRY }}/${{ env.PROJECT }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }} --help || true
+        LATEST_TAG=$(curl -sf -H "Authorization: Bearer $GITHUB_TOKEN" \
+          "https://api.github.com/repos/${REPO}/releases/latest" \
+          | jq -r '.tag_name // "v0.0.0"')
+        VERSION=${LATEST_TAG#v}
+        MAJOR=$(echo $VERSION | cut -d. -f1)
+        MINOR=$(echo $VERSION | cut -d. -f2)
+        PATCH=$(echo $VERSION | cut -d. -f3)
+        NEW_TAG="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+        curl -sf -X POST \
+          -H "Authorization: Bearer $GITHUB_TOKEN" \
+          -H "Content-Type: application/json" \
+          "https://api.github.com/repos/${REPO}/releases" \
+          -d "$(jq -n --arg tag "$NEW_TAG" --arg name "$NEW_TAG" \
+            '{tag_name: $tag, name: $name, generate_release_notes: true}')"

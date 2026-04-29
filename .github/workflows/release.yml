@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+env:
+  INTERNAL_REGISTRY: harbor-core.harbor.svc.cluster.local
+  PROJECT: stable-diffusion
+  IMAGE_NAME: stable-diffution-webui-rcom
+
+jobs:
+  promote:
+    runs-on: stable-diffution-webui-rcom-runner
+    permissions:
+      contents: write
+
+    steps:
+      - name: Fetch secrets from Infisical
+        uses: Infisical/secrets-action@v1.0.7
+        with:
+          client-id: ${{ secrets.INFISICAL_CLIENT_ID }}
+          client-secret: ${{ secrets.INFISICAL_CLIENT_SECRET }}
+          env-slug: prod
+          project-slug: homelab-bz-gt
+          secret-path: /
+          export-type: env
+          domain: http://infisical-infisical-standalone-infisical.infisical.svc.cluster.local:8080
+
+      - name: Log in to Harbor (internal)
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.INTERNAL_REGISTRY }}
+          username: ${{ env.HB_USERNAME }}
+          password: ${{ env.HB_PASSWORD }}
+
+      - uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-config-inline: |
+            [registry."harbor-core.harbor.svc.cluster.local"]
+              ca=["/etc/ssl/certs/ca-certificates.crt"]
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.INTERNAL_REGISTRY }}/${{ env.PROJECT }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      - name: Promote dev image to release tags
+        env:
+          DOCKER_CLI_EXPERIMENTAL: enabled
+        run: |
+          for TAG in $(jq -cr '[.tags[]] | unique | .[]' <<< "$DOCKER_METADATA_OUTPUT_JSON"); do
+            docker buildx imagetools create \
+              --tag "$TAG" \
+              ${{ env.INTERNAL_REGISTRY }}/${{ env.PROJECT }}/${{ env.IMAGE_NAME }}:dev
+          done
+
+      - name: Generate AI release notes
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          API="https://api.github.com/repos/${REPO}"
+          AUTH="Authorization: Bearer $GITHUB_TOKEN"
+
+          PREV_TAG=$(curl -sf -H "$AUTH" "${API}/releases" \
+            | jq -r "[.[] | select(.tag_name != \"$TAG\")] | .[0].tag_name // empty")
+
+          if [ -n "$PREV_TAG" ]; then
+            COMMITS=$(curl -sf -H "$AUTH" "${API}/compare/${PREV_TAG}...${TAG}" \
+              | jq -r '[.commits[] | .commit.message | split("\n")[0]] | join("\n")')
+          else
+            COMMITS="Initial release"
+          fi
+
+          PROMPT="Write release notes for stable-diffusion-webui-rcom ${TAG}, a self-hosted Stable Diffusion WebUI Docker image with ROCm (AMD GPU) support. Based on these commits since ${PREV_TAG}:\n\n${COMMITS}\n\nUse markdown with brief sections (What's Changed, etc.). Be concise and user-focused. Do not include preamble or sign-off."
+
+          NOTES=$(curl -sf --max-time 120 \
+            http://ollama.ollama.svc.cluster.local/api/generate \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg model "gemma4:31b" --arg prompt "$PROMPT" \
+              '{model: $model, prompt: $prompt, stream: false}')" \
+            | jq -r .response)
+
+          if [ -n "$NOTES" ]; then
+            RELEASE_ID=$(curl -sf -H "$AUTH" "${API}/releases/tags/${TAG}" | jq -r .id)
+            curl -sf -X PATCH -H "$AUTH" -H "Content-Type: application/json" \
+              "${API}/releases/${RELEASE_ID}" \
+              -d "$(jq -n --arg body "$NOTES" '{body: $body}')"
+          fi
