@@ -97,6 +97,8 @@ spec:
           value: /app/data/venv
         - name: PIP_CACHE_DIR
           value: /app/data/pip-cache
+        - name: PIP_NO_BUILD_ISOLATION
+          value: "1"
         - name: COMMANDLINE_ARGS
           value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test"
         volumeMounts:
