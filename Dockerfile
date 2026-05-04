@@ -25,7 +25,7 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/* \
     && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
        sh -s -- -y --default-toolchain stable --no-modify-path \
-    && chmod -R a+rx /usr/local/rustup /usr/local/cargo \
+    && chmod -R a+rwx /usr/local/rustup /usr/local/cargo \
     && curl -sL "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz" \
        | tar -xz -C /usr/local/bin oras
 
