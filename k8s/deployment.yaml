@@ -63,20 +63,23 @@ spec:
             [ -L /app/models ] || ln -s /app/data/models /app/models
             [ -L /app/extensions ] || ln -s /app/data/extensions /app/extensions
 
+            # --- model download (background) ---
             MODEL_DIR=/app/data/models/Stable-diffusion
+            DOWNLOAD_PID=""
             if [ -z "$(ls -A "$MODEL_DIR"/*.safetensors "$MODEL_DIR"/*.ckpt 2>/dev/null)" ]; then
               MODEL_URL="${SD_MODEL_URL:-https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors}"
               MODEL_FILE="${SD_MODEL_FILENAME:-v1-5-pruned-emaonly.safetensors}"
-              echo "No model found. Downloading $MODEL_FILE..."
-              wget -q --show-progress -O "$MODEL_DIR/$MODEL_FILE" "$MODEL_URL" || {
-                echo "ERROR: model download failed"
-                exit 1
-              }
-              echo "Model downloaded."
+              echo "No model found. Downloading $MODEL_FILE in background..."
+              wget -q --show-progress -O "$MODEL_DIR/$MODEL_FILE.tmp" "$MODEL_URL" \
+                && mv "$MODEL_DIR/$MODEL_FILE.tmp" "$MODEL_DIR/$MODEL_FILE" \
+                && echo "Model download complete." \
+                || { echo "ERROR: model download failed"; exit 1; } &
+              DOWNLOAD_PID=$!
             else
               echo "Model already present, skipping download."
             fi
 
+            # --- venv + webui.sh (parallel with download) ---
             if [ ! -f /app/data/venv/bin/activate ]; then
               echo "Creating venv..."
               python3 -m venv /app/data/venv
@@ -98,14 +101,18 @@ spec:
               if (echo > /dev/tcp/localhost/7860) 2>/dev/null; then
                 echo "Dependencies installed and server is ready."
                 kill $WEBSITE_PID
-                exit 0
+                break
               fi
               if (( i % 60 == 0 )); then echo "Still waiting... ($i s)"; fi
               sleep 1
             done
-            echo "Timed out (30 mins)."
-            tail -n 20 /tmp/webui-init.log
-            exit 1
+
+            # --- wait for download before handing off ---
+            if [ -n "$DOWNLOAD_PID" ]; then
+              echo "Waiting for model download to finish..."
+              wait $DOWNLOAD_PID || { echo "ERROR: model download failed"; exit 1; }
+            fi
+            exit 0
         env:
         - name: venv_dir
           value: /app/data/venv
