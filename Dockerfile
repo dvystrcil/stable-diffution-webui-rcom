@@ -27,11 +27,14 @@ RUN apt-get update && \
 WORKDIR /app
 COPY --from=source /app .
 
-# Pre-build venv at a fixed path — Rust available here, not in the final image
-RUN python3 -m venv /app/venv-prebuilt && \
+# Pre-build venv at a fixed path — Rust available here, not in the final image.
+# Use --system-site-packages so the ROCm torch from the base image is inherited;
+# exclude bare "torch*" lines to avoid pip pulling the CPU build from PyPI.
+RUN python3 -m venv --system-site-packages /app/venv-prebuilt && \
     /app/venv-prebuilt/bin/pip install --upgrade pip && \
     /app/venv-prebuilt/bin/pip install "setuptools<70" wheel && \
-    /app/venv-prebuilt/bin/pip install -r requirements_versions.txt
+    grep -vE "^torch($|[^a-z])" requirements_versions.txt | \
+    /app/venv-prebuilt/bin/pip install -r /dev/stdin
 
 # ── Stage 3: final runtime (no Rust) ─────────────────────────────────────────
 FROM ${BASE_IMAGE}
