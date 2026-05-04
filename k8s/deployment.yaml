@@ -58,10 +58,24 @@ spec:
           - -c
           - |
             echo "Preparing persistent mounts..."
-            mkdir -p /app/data/models /app/data/extensions /app/data/pip-cache
+            mkdir -p /app/data/models/Stable-diffusion /app/data/extensions /app/data/pip-cache
 
             [ -L /app/models ] || ln -s /app/data/models /app/models
             [ -L /app/extensions ] || ln -s /app/data/extensions /app/extensions
+
+            MODEL_DIR=/app/data/models/Stable-diffusion
+            if [ -z "$(ls -A "$MODEL_DIR"/*.safetensors "$MODEL_DIR"/*.ckpt 2>/dev/null)" ]; then
+              MODEL_URL="${SD_MODEL_URL:-https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors}"
+              MODEL_FILE="${SD_MODEL_FILENAME:-v1-5-pruned-emaonly.safetensors}"
+              echo "No model found. Downloading $MODEL_FILE..."
+              wget -q --show-progress -O "$MODEL_DIR/$MODEL_FILE" "$MODEL_URL" || {
+                echo "ERROR: model download failed"
+                exit 1
+              }
+              echo "Model downloaded."
+            else
+              echo "Model already present, skipping download."
+            fi
 
             if [ ! -f /app/data/venv/bin/activate ]; then
               echo "Creating venv..."
