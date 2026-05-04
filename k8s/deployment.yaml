@@ -63,17 +63,28 @@ spec:
             [ -L /app/models ] || ln -s /app/data/models /app/models
             [ -L /app/extensions ] || ln -s /app/data/extensions /app/extensions
 
-            # --- model download (background) ---
+            # --- model fetch (background, Harbor-first) ---
             MODEL_DIR=/app/data/models/Stable-diffusion
+            HARBOR_MODEL="${HARBOR_MODEL_REF:-harbor.sirddail.net/stable-diffusion/models:sd-v1-5}"
+            MODEL_FILE="${SD_MODEL_FILENAME:-v1-5-pruned-emaonly.safetensors}"
+            MODEL_URL="${SD_MODEL_URL:-https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors}"
             DOWNLOAD_PID=""
             if [ -z "$(ls -A "$MODEL_DIR"/*.safetensors "$MODEL_DIR"/*.ckpt 2>/dev/null)" ]; then
-              MODEL_URL="${SD_MODEL_URL:-https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors}"
-              MODEL_FILE="${SD_MODEL_FILENAME:-v1-5-pruned-emaonly.safetensors}"
-              echo "No model found. Downloading $MODEL_FILE in background..."
-              wget -q --show-progress -O "$MODEL_DIR/$MODEL_FILE.tmp" "$MODEL_URL" \
-                && mv "$MODEL_DIR/$MODEL_FILE.tmp" "$MODEL_DIR/$MODEL_FILE" \
-                && echo "Model download complete." \
-                || { echo "ERROR: model download failed"; exit 1; } &
+              {
+                echo "No model found. Trying Harbor cache first..."
+                if oras pull --output "$MODEL_DIR" "$HARBOR_MODEL" 2>/dev/null; then
+                  echo "Model pulled from Harbor."
+                else
+                  echo "Not in Harbor. Downloading from HuggingFace..."
+                  wget -q --show-progress -O "$MODEL_DIR/$MODEL_FILE.tmp" "$MODEL_URL" \
+                    && mv "$MODEL_DIR/$MODEL_FILE.tmp" "$MODEL_DIR/$MODEL_FILE" \
+                    && echo "Download complete. Pushing to Harbor cache..." \
+                    && cd "$MODEL_DIR" \
+                    && oras push "$HARBOR_MODEL" "$MODEL_FILE" \
+                    && echo "Pushed to Harbor." \
+                    || { echo "ERROR: model fetch failed"; exit 1; }
+                fi
+              } &
               DOWNLOAD_PID=$!
             else
               echo "Model already present, skipping download."
@@ -122,9 +133,14 @@ spec:
           value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test"
         - name: STABLE_DIFFUSION_REPO
           value: "https://github.com/w-e-w/stablediffusion.git"
+        - name: DOCKER_CONFIG
+          value: /docker-config
         volumeMounts:
         - name: sd-webui-data
           mountPath: /app/data
+        - name: docker-config
+          mountPath: /docker-config
+          readOnly: true
 
       containers:
       - name: sd-webui-rcom
@@ -172,6 +188,12 @@ spec:
       - name: sd-webui-data
         persistentVolumeClaim:
           claimName: sd-webui-data-claim
+      - name: docker-config
+        secret:
+          secretName: sd-webui-rcom-harbor-pull
+          items:
+          - key: .dockerconfigjson
+            path: config.json
 ---
 apiVersion: v1
 kind: Service

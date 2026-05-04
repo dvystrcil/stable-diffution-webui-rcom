@@ -10,11 +10,14 @@ RUN git clone --depth 1 --branch ${STABLE_DIFFUSION_TAG} https://github.com/AUTO
 # Stage 2: Production image with ROCm/PyTorch
 FROM harbor-core.harbor.svc.cluster.local/dockerhub-proxy/rocm/pytorch:rocm7.0.2_ubuntu24.04_py3.12_pytorch_release_2.8.0
 
+ARG ORAS_VERSION=1.2.2
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     libgl1 wget git curl libtcmalloc-minimal4 python3.12-venv bc \
     rustc cargo \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -sL "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz" \
+       | tar -xz -C /usr/local/bin oras
 
 RUN git config --system --add safe.directory /app
 
