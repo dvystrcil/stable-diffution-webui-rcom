@@ -13,6 +13,7 @@ FROM harbor-core.harbor.svc.cluster.local/dockerhub-proxy/rocm/pytorch:rocm7.0.2
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     libgl1 wget git curl libtcmalloc-minimal4 python3.12-venv bc \
+    rustc cargo \
     && rm -rf /var/lib/apt/lists/*
 
 RUN git config --system --add safe.directory /app
