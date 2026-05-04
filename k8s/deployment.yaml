@@ -90,21 +90,18 @@ spec:
               echo "Model already present, skipping download."
             fi
 
-            # --- venv setup (copy prebuilt from image, parallel with download) ---
+            # --- venv + webui.sh (parallel with download) ---
             if [ ! -f /app/data/venv/bin/activate ]; then
-              echo "Copying prebuilt venv from image..."
-              cp -r /app/venv-prebuilt /app/data/venv
-              # Fix hardcoded paths in activate script and bin entrypoints
-              sed -i 's|/app/venv-prebuilt|/app/data/venv|g' \
-                /app/data/venv/bin/activate \
-                /app/data/venv/bin/activate.csh \
-                /app/data/venv/bin/activate.fish 2>/dev/null || true
-              find /app/data/venv/bin -type f -exec \
-                sed -i '1s|#!/app/venv-prebuilt|#!/app/data/venv|' {} \; 2>/dev/null || true
-              echo "Venv ready."
+              echo "Creating venv..."
+              python3 -m venv /app/data/venv
             fi
+            echo "Ensuring build deps..."
+            /app/data/venv/bin/pip install --quiet "setuptools<70" wheel
 
-            echo "Starting WebUI (skip-install — deps prebuilt in image)..."
+            echo "Starting dependency installation..."
+            # Pre-built wheels in /app/wheels (e.g. tokenizers) are used by pip
+            # automatically — no Rust compiler needed in the init container.
+            export PIP_FIND_LINKS=/app/wheels
             ./webui.sh > /tmp/webui-init.log 2>&1 &
             WEBSITE_PID=$!
 
@@ -136,7 +133,7 @@ spec:
         - name: PIP_CACHE_DIR
           value: /app/data/pip-cache
         - name: COMMANDLINE_ARGS
-          value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test --skip-install"
+          value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test"
         - name: STABLE_DIFFUSION_REPO
           value: "https://github.com/w-e-w/stablediffusion.git"
         - name: DOCKER_CONFIG

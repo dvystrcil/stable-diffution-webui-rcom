@@ -9,32 +9,27 @@ WORKDIR /app
 RUN git clone --depth 1 --branch ${STABLE_DIFFUSION_TAG} \
     https://github.com/AUTOMATIC1111/stable-diffusion-webui.git .
 
-# ── Stage 2: venv-builder (Rust available; result cached in Harbor) ──────────
-FROM ${BASE_IMAGE} AS venv-builder
+# ── Stage 2: wheel-builder (Rust available; output cached in Harbor) ─────────
+# Builds only the packages that require Rust compilation. The full pip install
+# still happens at runtime via webui.sh, but finds these wheels pre-built so
+# no Rust compiler is needed in the final image or the init container.
+FROM ${BASE_IMAGE} AS wheel-builder
 
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    python3.12-venv curl git bc \
-    && rm -rf /var/lib/apt/lists/* \
-    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
-       sh -s -- -y --default-toolchain stable --no-modify-path \
-    && chmod -R a+rx /usr/local/rustup /usr/local/cargo
+    apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/* && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+    sh -s -- -y --default-toolchain stable --no-modify-path && \
+    chmod -R a+rx /usr/local/rustup /usr/local/cargo
 
-WORKDIR /app
-COPY --from=source /app .
-
-# Pre-build venv at a fixed path — Rust available here, not in the final image.
-# Use --system-site-packages so the ROCm torch from the base image is inherited;
-# exclude bare "torch*" lines to avoid pip pulling the CPU build from PyPI.
-RUN python3 -m venv --system-site-packages /app/venv-prebuilt && \
-    /app/venv-prebuilt/bin/pip install --upgrade pip && \
-    /app/venv-prebuilt/bin/pip install "setuptools<70" wheel && \
-    grep -vE "^torch($|[^a-z])" requirements_versions.txt | \
-    /app/venv-prebuilt/bin/pip install -r /dev/stdin
+# Build tokenizers wheel for the Python version in the base image.
+# --no-deps: we only want the tokenizers wheel, not its deps.
+# Result goes to /wheels/ and is copied into the final image.
+RUN pip wheel --no-deps tokenizers -w /wheels/
 
 # ── Stage 3: final runtime (no Rust) ─────────────────────────────────────────
 FROM ${BASE_IMAGE}
@@ -54,7 +49,7 @@ WORKDIR /app
 RUN chown 1000:1000 /app && chmod 755 /app
 
 COPY --from=source --chown=1000:1000 /app .
-COPY --from=venv-builder --chown=1000:1000 /app/venv-prebuilt /app/venv-prebuilt
+COPY --from=wheel-builder /wheels /app/wheels
 
 RUN chmod +x ./webui.sh
 
