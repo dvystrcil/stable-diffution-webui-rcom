@@ -108,7 +108,7 @@ spec:
       containers:
       - name: sd-webui-rcom
         imagePullPolicy: Always
-        image: harbor.sirddail.net/stable-diffusion/stable-diffution-webui-rcom:latest
+        image: harbor.sirddail.net/stable-diffusion/stable-diffution-webui-rcom:dev
         command:
           - /bin/bash
           - -c

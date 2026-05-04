@@ -62,11 +62,12 @@ jobs:
         images: ${{ env.INTERNAL_REGISTRY }}/${{ env.PROJECT }}/${{ env.IMAGE_NAME }}
         tags: |
           type=raw,value=dev,enable=${{ github.ref == 'refs/heads/main' }}
+          type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
           type=ref,event=branch,enable=${{ github.ref != 'refs/heads/main' }}
           type=ref,event=pr
 
     - name: Build and push Docker image
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v7
       with:
         context: .
         platforms: linux/amd64
