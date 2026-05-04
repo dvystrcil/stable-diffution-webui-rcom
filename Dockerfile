@@ -26,10 +26,10 @@ RUN apt-get update && \
     sh -s -- -y --default-toolchain stable --no-modify-path && \
     chmod -R a+rx /usr/local/rustup /usr/local/cargo
 
-# Build tokenizers wheel for the Python version in the base image.
-# --no-deps: we only want the tokenizers wheel, not its deps.
-# Result goes to /wheels/ and is copied into the final image.
-RUN pip wheel --no-deps tokenizers -w /wheels/
+# Build tokenizers==0.13.4 wheel for Python 3.12.
+# transformers==4.30.2 requires tokenizers<0.14; PyPI has no cp312 wheel
+# for 0.13.4 (released before Python 3.12). --no-deps: only this wheel.
+RUN pip wheel --no-deps "tokenizers==0.13.4" -w /wheels/
 
 # ── Stage 3: final runtime (no Rust) ─────────────────────────────────────────
 FROM ${BASE_IMAGE}
