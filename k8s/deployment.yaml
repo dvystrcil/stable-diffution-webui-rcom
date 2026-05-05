@@ -193,6 +193,8 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
         supplementalGroups: [44, 109, 993]
+        seccompProfile:
+          type: Unconfined
       volumes:
       - name: sd-webui-data
         persistentVolumeClaim:
