@@ -47,6 +47,8 @@ spec:
           operator: "Equal"
           value: "yes"
           effect: "NoSchedule"
+      nodeSelector:
+        amd.com/gpu.family: GC_11_5_0
       serviceAccount: sd-webui-rcom
       serviceAccountName: sd-webui-rcom
       initContainers:
@@ -175,9 +177,13 @@ spec:
         - name: PIP_CACHE_DIR
           value: /app/data/pip-cache
         - name: COMMANDLINE_ARGS
-          value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test --skip-install --use-cpu all --no-half"
+          value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test --skip-install"
         - name: STABLE_DIFFUSION_REPO
           value: "https://github.com/w-e-w/stablediffusion.git"
+        - name: HSA_OVERRIDE_GFX_VERSION
+          value: "11.5.1"
+        - name: HSA_ENABLE_SDMA
+          value: "0"
         readinessProbe:
           httpGet:
             path: /
@@ -192,6 +198,11 @@ spec:
           initialDelaySeconds: 60
           periodSeconds: 30
           timeoutSeconds: 10
+        resources:
+          limits:
+            amd.com/gpu: "1"
+          requests:
+            amd.com/gpu: "1"
         volumeMounts:
         - name: sd-webui-data
           mountPath: /app/data
