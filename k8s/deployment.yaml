@@ -170,8 +170,9 @@ spec:
           - |
             rm -rf /app/models && ln -s /app/data/models /app/models
             rm -rf /app/extensions && ln -s /app/data/extensions /app/extensions
+            echo "=== rocminfo ===" && rocminfo 2>&1 | head -20 || echo "rocminfo not found"
             echo "=== Pre-flight GPU test ===" && \
-            /app/data/venv/bin/python3 -c "import torch; print('torch:', torch.__version__); print('cuda:', torch.cuda.is_available()); t=torch.zeros(4,device='cuda') if torch.cuda.is_available() else None; t2=torch.ones(4).cuda() if torch.cuda.is_available() else None; print('GPU tensors OK:', t, t2)" && \
+            /app/data/venv/bin/python3 -c "import faulthandler,sys; faulthandler.enable(file=sys.stdout); import torch; print('torch:', torch.__version__); print('cuda:', torch.cuda.is_available()); print('mem_get_info:', torch.cuda.mem_get_info(0) if torch.cuda.is_available() else 'N/A'); print('allocating...'); t=torch.zeros(4,device='cuda'); print('GPU tensor OK:', t)" 2>&1 && \
             echo "=== GPU OK ===" || echo "=== GPU FAILED ==="
             exec ./webui.sh
         ports:
@@ -189,6 +190,8 @@ spec:
           value: "11.5.1"
         - name: HSA_ENABLE_SDMA
           value: "0"
+        - name: HSA_XNACK
+          value: "1"
         readinessProbe:
           httpGet:
             path: /
