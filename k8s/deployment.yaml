@@ -192,15 +192,14 @@ spec:
           initialDelaySeconds: 60
           periodSeconds: 30
           timeoutSeconds: 10
-        securityContext:
-          privileged: true
+        resources:
+          limits:
+            amd.com/gpu: "1"
+          requests:
+            amd.com/gpu: "1"
         volumeMounts:
         - name: sd-webui-data
           mountPath: /app/data
-        - name: kfd
-          mountPath: /dev/kfd
-        - name: dri
-          mountPath: /dev/dri
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
@@ -218,12 +217,6 @@ spec:
           items:
           - key: .dockerconfigjson
             path: config.json
-      - name: kfd
-        hostPath:
-          path: /dev/kfd
-      - name: dri
-        hostPath:
-          path: /dev/dri
 ---
 apiVersion: v1
 kind: Service
