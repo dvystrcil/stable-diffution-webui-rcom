@@ -21,7 +21,7 @@ ENV RUSTUP_HOME=/usr/local/rustup \
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    libgl1 wget git curl libtcmalloc-minimal4 python3.12-venv bc \
+    libgl1 wget git curl libtcmalloc-minimal4 python3.12-venv bc libssl-dev pkg-config \
     && rm -rf /var/lib/apt/lists/* \
     && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
        sh -s -- -y --default-toolchain stable --no-modify-path \
