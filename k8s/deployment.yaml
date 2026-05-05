@@ -181,6 +181,8 @@ spec:
           initialDelaySeconds: 60
           periodSeconds: 30
           timeoutSeconds: 10
+        securityContext:
+          privileged: true
         volumeMounts:
         - name: sd-webui-data
           mountPath: /app/data
