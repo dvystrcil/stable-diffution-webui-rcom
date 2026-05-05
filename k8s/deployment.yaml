@@ -163,7 +163,7 @@ spec:
         - name: PIP_CACHE_DIR
           value: /app/data/pip-cache
         - name: COMMANDLINE_ARGS
-          value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test"
+          value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test --skip-install"
         - name: STABLE_DIFFUSION_REPO
           value: "https://github.com/w-e-w/stablediffusion.git"
         readinessProbe:
