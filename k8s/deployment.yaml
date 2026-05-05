@@ -175,7 +175,7 @@ spec:
         - name: PIP_CACHE_DIR
           value: /app/data/pip-cache
         - name: COMMANDLINE_ARGS
-          value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test --skip-install"
+          value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test --skip-install --use-cpu all --no-half"
         - name: STABLE_DIFFUSION_REPO
           value: "https://github.com/w-e-w/stablediffusion.git"
         readinessProbe:
@@ -192,11 +192,6 @@ spec:
           initialDelaySeconds: 60
           periodSeconds: 30
           timeoutSeconds: 10
-        resources:
-          limits:
-            amd.com/gpu: "1"
-          requests:
-            amd.com/gpu: "1"
         volumeMounts:
         - name: sd-webui-data
           mountPath: /app/data
