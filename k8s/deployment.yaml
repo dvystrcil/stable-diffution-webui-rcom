@@ -203,6 +203,8 @@ spec:
           initialDelaySeconds: 60
           periodSeconds: 30
           timeoutSeconds: 10
+        securityContext:
+          privileged: true
         resources:
           limits:
             amd.com/gpu: "1"
