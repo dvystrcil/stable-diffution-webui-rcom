@@ -92,9 +92,10 @@ spec:
 
             # --- venv + webui.sh (parallel with download) ---
             if [ ! -f /app/data/venv/bin/activate ] || \
-               ! /app/data/venv/bin/python3 -c "import site" 2>/dev/null; then
+               ! /app/data/venv/bin/python3 -c "import site" 2>/dev/null || \
+               ! grep -q "include-system-site-packages = true" /app/data/venv/pyvenv.cfg 2>/dev/null; then
               echo "Creating/recovering venv (with system-site-packages for ROCm torch)..."
-              mv /app/data/venv /app/data/venv.broken-$(date +%s) 2>/dev/null || true
+              mv /app/data/venv "/app/data/venv.old-$(date +%s)" 2>/dev/null || true
               python3 -m venv --system-site-packages /app/data/venv
             fi
             echo "Ensuring build deps..."
