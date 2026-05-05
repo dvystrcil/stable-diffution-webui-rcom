@@ -184,10 +184,15 @@ spec:
         volumeMounts:
         - name: sd-webui-data
           mountPath: /app/data
+        - name: kfd
+          mountPath: /dev/kfd
+        - name: dri
+          mountPath: /dev/dri
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+        supplementalGroups: [44, 109]
       volumes:
       - name: sd-webui-data
         persistentVolumeClaim:
@@ -198,6 +203,12 @@ spec:
           items:
           - key: .dockerconfigjson
             path: config.json
+      - name: kfd
+        hostPath:
+          path: /dev/kfd
+      - name: dri
+        hostPath:
+          path: /dev/dri
 ---
 apiVersion: v1
 kind: Service
