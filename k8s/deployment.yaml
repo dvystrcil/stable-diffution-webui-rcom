@@ -60,8 +60,8 @@ spec:
             echo "Preparing persistent mounts..."
             mkdir -p /app/data/models/Stable-diffusion /app/data/extensions /app/data/pip-cache
 
-            [ -L /app/models ] || ln -s /app/data/models /app/models
-            [ -L /app/extensions ] || ln -s /app/data/extensions /app/extensions
+            rm -rf /app/models && ln -s /app/data/models /app/models
+            rm -rf /app/extensions && ln -s /app/data/extensions /app/extensions
 
             # --- model fetch (background, Harbor-first) ---
             MODEL_DIR=/app/data/models/Stable-diffusion
