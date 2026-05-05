@@ -119,6 +119,12 @@ spec:
               sleep 1
             done
 
+            # --- remove rocm5.7 torch; main container uses system rocm7.0 torch via PYTHONPATH ---
+            echo "Removing venv torch (rocm5.7) so main container uses system torch (rocm7.0.2)..."
+            /app/data/venv/bin/pip uninstall -y torch torchvision torchaudio 2>/dev/null || true
+            rm -rf /app/data/venv/lib/python3.12/site-packages/~orch* 2>/dev/null || true
+            echo "Torch removed."
+
             # --- wait for download before handing off ---
             if [ -n "$DOWNLOAD_PID" ]; then
               echo "Waiting for model download to finish..."
@@ -167,6 +173,8 @@ spec:
           value: "--listen --port 7860 --skip-python-version-check --skip-torch-cuda-test --skip-install"
         - name: STABLE_DIFFUSION_REPO
           value: "https://github.com/w-e-w/stablediffusion.git"
+        - name: PYTHONPATH
+          value: /opt/venv/lib/python3.12/site-packages
         readinessProbe:
           httpGet:
             path: /
