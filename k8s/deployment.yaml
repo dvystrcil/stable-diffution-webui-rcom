@@ -138,8 +138,6 @@ spec:
           value: /docker-config
         - name: RUSTFLAGS
           value: "--cap-lints allow"
-        - name: TORCH_COMMAND
-          value: "echo 'skipping torch install - ROCm torch from system-site-packages'"
         volumeMounts:
         - name: sd-webui-data
           mountPath: /app/data
