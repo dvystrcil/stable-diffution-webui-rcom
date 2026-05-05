@@ -189,10 +189,6 @@ spec:
         - name: HSA_OVERRIDE_GFX_VERSION
           value: "11.5.1"
         - name: HSA_ENABLE_SDMA
-          value: "0"
-        - name: HSA_XNACK
-          value: "1"
-        - name: HSA_FORCE_FINE_GRAIN_PCIE
           value: "1"
         readinessProbe:
           httpGet:
