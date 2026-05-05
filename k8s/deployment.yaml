@@ -170,12 +170,8 @@ spec:
           - |
             rm -rf /app/models && ln -s /app/data/models /app/models
             rm -rf /app/extensions && ln -s /app/data/extensions /app/extensions
-            echo "=== enable XNACK via sysfs ==="
-            cat /sys/module/amdgpu/parameters/xnack 2>/dev/null || echo "xnack param not found"
-            echo 1 > /sys/module/amdgpu/parameters/xnack 2>&1 && echo "xnack enabled" || echo "xnack not settable"
-            cat /sys/module/amdgpu/parameters/xnack 2>/dev/null
             echo "=== Pre-flight GPU test ===" && \
-            /app/data/venv/bin/python3 -c "import torch; print('torch:', torch.__version__); print('empty...'); e=torch.empty(4,device='cuda'); print('empty OK'); print('zeros...'); z=torch.zeros(4,device='cuda'); print('zeros OK:', z)" 2>&1 && \
+            /app/data/venv/bin/python3 -c "import torch; e=torch.empty(4,device='cuda'); print('empty OK'); c=torch.zeros(4).to('cuda'); print('cpu->gpu OK:', c); p=torch.zeros(4).pin_memory().to('cuda',non_blocking=True); torch.cuda.synchronize(); print('pinned->gpu OK:', p)" 2>&1 && \
             echo "=== GPU OK ===" || echo "=== GPU FAILED ==="
             exec ./webui.sh
         ports:
@@ -193,6 +189,8 @@ spec:
           value: "11.5.1"
         - name: HSA_ENABLE_SDMA
           value: "1"
+        - name: PYTORCH_ROCM_ARCH
+          value: "gfx1151"
         readinessProbe:
           httpGet:
             path: /
