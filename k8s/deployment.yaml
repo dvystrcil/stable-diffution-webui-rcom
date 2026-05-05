@@ -153,8 +153,9 @@ spec:
           - /bin/bash
           - -c
           - |
-            echo "Starting WebUI..."
-            exec ./webui.sh "$@"
+            rm -rf /app/models && ln -s /app/data/models /app/models
+            rm -rf /app/extensions && ln -s /app/data/extensions /app/extensions
+            exec ./webui.sh
         ports:
         - containerPort: 7860
         env:
