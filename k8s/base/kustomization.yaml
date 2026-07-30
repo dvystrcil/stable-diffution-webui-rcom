@@ -1,0 +1,5 @@
+resources:
+  - deployment.yaml
+  - namespace.yaml
+  - sd-webui-rcom-infisical-secret.yaml
+  - vpa.yaml
