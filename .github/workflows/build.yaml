@@ -28,7 +28,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v7
 
     - name: Fetch secrets from Infisical
       uses: Infisical/secrets-action@v1.0.16
